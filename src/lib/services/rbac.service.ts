@@ -21,6 +21,10 @@ export class RbacService {
         return this.builder.getGroups().find(g => g.name.trim().toLowerCase() === groupName.trim().toLowerCase());
     }
 
+    getResources(): IRbacResource[] {
+        return this.builder.getResources();
+    }
+
     getResource(resourceName: string, groupName?: string): IRbacResource|null {
         for(let resource of this.builder.getResources()){
             if(!groupName || resource.group.trim().toLowerCase() === groupName.trim().toLowerCase()){
