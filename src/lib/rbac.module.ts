@@ -1,17 +1,18 @@
-import {DynamicModule, Module, OnApplicationBootstrap} from "@nestjs/common";
+import {DynamicModule, Module} from "@nestjs/common";
+import {RbacService} from "./services/rbac.service";
 
 @Module({})
-export class RbacModule implements OnApplicationBootstrap {
+export class RbacModule {
     static forRoot(): DynamicModule {
         return {
             module: RbacModule,
             providers: [
-
-            ]
+                RbacService,
+            ],
+            exports: [
+                RbacService
+            ],
         }
     }
-
-    onApplicationBootstrap() {
-        console.log('hi');
-    }
 }
+

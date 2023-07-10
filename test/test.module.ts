@@ -1,9 +1,21 @@
 import {Test, TestingModule} from "@nestjs/testing";
-import {RbacGroup} from "../src/lib/decorators/rbac-group.decorator";
-import {RbacResource} from "../src/lib/decorators/rbac-resource.decorator";
-import {RbacRequires, RbacRequiresGet, RbacRequiresUpdate} from "../src/lib/decorators/rbac-requires.decorator";
-import {Controller} from "@nestjs/common";
+import {GetRbacGroup, RbacGroup} from "../src/lib/decorators/rbac-group.decorator";
+import {GetRbacResource, RbacResource} from "../src/lib/decorators/rbac-resource.decorator";
+import {
+  GetRbacVerbs,
+  RbacRequiresCreate,
+  RbacRequiresGet,
+  RbacRequiresList
+} from "../src/lib/decorators/rbac-requires.decorator";
+import {Controller, Get, Injectable, Post, Put, UseGuards} from "@nestjs/common";
 import {RbacModule} from "../src/lib/rbac.module";
+import {RbacGuard} from "../src/lib/guards/rbac.guard";
+import {Observable} from "rxjs";
+import {IRbacResource} from "../src/lib/interfaces/rbac-resource.interface";
+import {IRbacVerbs} from "../src/lib/enum/rbac-verb.enum";
+import {IRbacValidateRequest} from "../src/lib/interfaces/rbac-validate-request.interface";
+import {IRbacGroup} from "../src/lib/interfaces/rbac-group.interface";
+import {RbacService} from "../src";
 
 export function createTestModule(): Promise<TestingModule> {
   return Test.createTestingModule({
@@ -12,24 +24,47 @@ export function createTestModule(): Promise<TestingModule> {
     ],
     controllers: [
       TestController
+    ],
+    providers: [
+      TestGuard,
     ]
   }).compile();
 }
 
-@RbacGroup('Resources')
-@RbacResource('Test')
-@Controller()
+@Injectable()
+export class TestGuard extends RbacGuard() {
+  constructor(
+      private rbacService: RbacService,
+  ){ super(); }
+
+  validate(request: IRbacValidateRequest): boolean | Promise<boolean> | Observable<boolean> {
+    const binding = this.rbacService.createBinding({
+      verbs: ['LIST', 'GET']
+    })
+    return this.validateRequest(request, [binding]);
+  }
+}
+
+@UseGuards(TestGuard)
+@RbacGroup('Testing')
+@RbacResource('Resource')
+@Controller('/')
 export class TestController {
 
-  @RbacRequires(['LIST', 'GET', 'UPDATE'])
-  requiresList(){}
+  @RbacRequiresList()
+  @Get()
+  list(
+      @GetRbacGroup() group: IRbacGroup|null,
+      @GetRbacResource() resource: IRbacResource|null,
+      @GetRbacVerbs() verbs: IRbacVerbs,
+  ){}
 
-  @RbacGroup('Resources2')
   @RbacRequiresGet()
-  requiresGet(){}
+  @Post()
+  allowed(){}
 
-  @RbacResource('Test2')
-  @RbacRequiresUpdate()
-  requiresUpdate(){}
+  @RbacRequiresCreate()
+  @Put()
+  denied(){}
 
 }

@@ -1,6 +1,6 @@
-import {RbacResource} from "./rbac-resource.interface";
+import {IRbacResource} from "./rbac-resource.interface";
 
-export interface RbacGroup {
+export interface IRbacGroup {
     name: string;
-    resources: RbacResource[];
+    resources: IRbacResource[];
 }
