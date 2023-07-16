@@ -95,7 +95,7 @@ export class GroupController {
 
 ### Retrieve Groups, Resources and Verbs of the current route
 ```typescript
-import { RbacGroup, RbacResource, RbacRequires, RbacRequires, GetRbacGroup, GetRbacResource, GetRbacVerbs, IRbacGroup, IRbacResource, IRbacVerbs } from '@marxlnfcs/nest-rbac-auth';
+import { RbacGroup, RbacResource, RbacRequires, RbacRequires, GetRbacGroup, GetRbacResource, GetRbacVerbs, IRbacGroup, IRbacResource, IRbacVerbs, IRbacRequiresOptions } from '@marxlnfcs/nest-rbac-auth';
 
 @Controller('/users')
 @RbacGroup('AccessManagement')
@@ -108,6 +108,7 @@ export class UserController {
         @GetRbacGroup() group: IRbacGroup,
         @GetRbacResource() resource: IRbacResource,
         @GetRbacVerbs() verbs: IRbacVerbs,
+        @GetRbacRequiresOptions() options: IRbacRequiresOptions,
     ){ ... }
 
 }
@@ -141,6 +142,23 @@ export class RoleGuard extends RbacGuard() {
          */
 
     }
+}
+```
+
+### Skip validation for certain routes
+```typescript
+import { RbacGroup, RbacResource, RbacRequiresList } from '@marxlnfcs/nest-rbac-auth';
+
+@Controller('/users')
+@RbacGroup('AccessManagement')
+@RbacResource('User')
+export class UserController {
+
+    @Get()
+    @RbacRequiresList({ skipValidation: true })
+    // @RbacRequires('LIST', { skipValidation: true, meta: { ... } )
+    getUsers(){ ... }
+
 }
 ```
 

@@ -1,9 +1,17 @@
 import {ExecutionContext, Injectable} from "@nestjs/common";
 import {IRbacGroup} from "../interfaces/rbac-group.interface";
 import {getRbacControllers} from "../rbac.storage";
-import {getRbacGroup, getRbacMethods, getRbacResource, getRbacVerbs} from "../utils/metadata.utils";
+import {
+    getRbacGroup,
+    getRbacMethods,
+    getRbacRequiresOptions,
+    getRbacResource,
+    getRbacVerbs
+} from "../utils/metadata.utils";
 import {IRbacVerbOrString, IRbacVerbs} from "../enum/rbac-verb.enum";
 import {IRbacResource} from "../interfaces/rbac-resource.interface";
+import {IRbacRequiresOptions} from "../interfaces/rbac-requires-options.interface";
+import {IRbacValidateRequest} from "../interfaces/rbac-validate-request.interface";
 
 /** @internal */
 export function getRbacBuilder(): RbacBuilderService {
@@ -43,6 +51,14 @@ export class RbacBuilderService {
         return this.groups;
     }
 
+    getRequestFromContext(context: ExecutionContext): IRbacValidateRequest|null {
+        const [ controller, method ] = [ context.getClass(), context.getHandler().name ];
+        if(controller && method){
+            return this.getResourceInfo(controller, method);
+        }
+        return null;
+    }
+
     getGroupFromContext(context: ExecutionContext): IRbacGroup|null {
         const [ controller, method ] = [ context.getClass(), context.getHandler().name ];
         if(controller && method){
@@ -74,11 +90,17 @@ export class RbacBuilderService {
         return this.getResourceInfo(controller, method)?.verbs || [];
     }
 
-    private getResourceInfo(controller: any, method: string|symbol): { group: string, resource: string, verbs: IRbacVerbs } {
+    getOptionsFromContext(context: ExecutionContext): IRbacRequiresOptions {
+        const [ controller, method ] = [ context.getClass(), context.getHandler().name ];
+        return this.getResourceInfo(controller, method).options;
+    }
+
+    private getResourceInfo(controller: any, method: string|symbol): { group: string, resource: string, verbs: IRbacVerbs, options: IRbacRequiresOptions } {
         const group = this.extractGroupName(controller, method);
         const resource = this.extractResourceName(controller, method);
         const verbs = this.extractResourceVerbs(controller, method);
-        return { group, resource: resource?.toString(), verbs };
+        const options = this.extractRequiresOptions(controller, method);
+        return { group, resource: resource?.toString(), verbs, options };
     }
 
     private getOrCreateGroup(groupName: string): IRbacGroup {
@@ -123,6 +145,10 @@ export class RbacBuilderService {
 
     private extractResourceName(controller: any, propertyKey?: string|symbol): string|symbol|null {
         return getRbacResource(controller, propertyKey) || getRbacResource(controller) || propertyKey || null;
+    }
+
+    private extractRequiresOptions(controller: any, propertyKey?: string|symbol): IRbacRequiresOptions {
+        return getRbacRequiresOptions(controller, propertyKey) || getRbacRequiresOptions(controller);
     }
 
     private extractResourceVerbs(controller: any, propertyKey?: string|symbol): IRbacVerbs {

@@ -1,54 +1,41 @@
 import {CanActivate, ExecutionContext, mixin, Type} from "@nestjs/common";
 import {IRbacResource} from "../interfaces/rbac-resource.interface";
 import {Observable} from "rxjs";
-import {Request, Response} from 'express';
-import {getRbac, RbacService} from "../services/rbac.service";
+import {getRbac} from "../services/rbac.service";
 import {memoize} from "../utils/memoize.utils";
-import {IRbacValidateRequest} from "../interfaces/rbac-validate-request.interface";
+import {IRbacValidateContext, IRbacValidateRequest} from "../interfaces/rbac-validate-request.interface";
 import {getRbacBuilder} from "../services/rbac-builder.service";
 import {IRbacBinding} from "../interfaces/rbac-binding.interface";
 
-export interface RbacValidationGuard {
-    validate(request: IRbacValidateRequest, resource: IRbacResource): boolean|Promise<boolean>|Observable<boolean>;
-    validateRequest(request: IRbacValidateRequest, bindings: IRbacBinding[]): boolean;
-    getContext(): ExecutionContext;
-    getRequest(): Request;
-    getResponse(): Response;
+export interface IRbacValidationGuard<Metadata extends object = any> {
+    validate(request: IRbacValidateRequest<Metadata>, resource: IRbacResource, context: IRbacValidateContext): boolean|Promise<boolean>|Observable<boolean>;
+    validateRequest(request: IRbacValidateRequest<Metadata>, bindings: IRbacBinding[]): boolean;
 }
 
-export const RbacGuard: () => Type<RbacValidationGuard> = memoize(createRbacGuard);
+export const RbacGuard: <Metadata extends object = any>() => Type<IRbacValidationGuard<Metadata>> = memoize(createRbacGuard);
 
-function createRbacGuard(): Type<RbacValidationGuard> {
-    class MixinRbacGuard implements CanActivate {
+function createRbacGuard(): Type<IRbacValidationGuard> {
+    class MixinRbacGuard implements CanActivate, IRbacValidationGuard {
         private rbac = getRbac();
         private rbacBuilder = getRbacBuilder();
-        private context: ExecutionContext;
-        private resource: IRbacResource|null;
 
         canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
-            this.context = context;
-            this.resource = this.rbacBuilder.getResourceFromContext(context);
-
-            if(this.resource){
+            const http = context.switchToHttp();
+            const resource = this.rbacBuilder.getResourceFromContext(context);
+            const verbs = this.rbacBuilder.getVerbsFromContext(context);
+            const options = this.rbacBuilder.getOptionsFromContext(context);
+            if(resource && !options.skipValidation){
                 return this.validate(
-                    {
-                        group: this.resource.group,
-                        resource: this.resource.name,
-                        verbs: this.rbacBuilder.getVerbsFromContext(context)
-                    },
-                    this.resource
+                    { group: resource.group, resource: resource.name, verbs, options },
+                    resource,
+                    { context, request: http.getRequest(), response: http.getResponse() }
                 );
             }
             return true;
         }
 
-        getResource(): IRbacResource { return this.resource || null; };
-        getContext(): ExecutionContext { return this.context }
-        getRequest(): Request { return this.context?.switchToHttp().getRequest() }
-        getResponse(): Response { return this.context?.switchToHttp().getResponse() }
-
-        validate(request: IRbacValidateRequest, resource: IRbacResource): boolean|Promise<boolean>|Observable<boolean> {
-            return false;
+        validate(request: IRbacValidateRequest, resource: IRbacResource, context: IRbacValidateContext): boolean|Promise<boolean>|Observable<boolean> {
+            return this.validateRequest(request, []);
         }
 
         validateRequest(request: IRbacValidateRequest, bindings: IRbacBinding[]): boolean {

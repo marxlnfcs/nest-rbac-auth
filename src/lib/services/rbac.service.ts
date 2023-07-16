@@ -39,6 +39,20 @@ export class RbacService {
     validate(request: IRbacValidateRequest, bindings: IRbacBinding[]): boolean {
         const resource = this.getResource(request.resource, request.group);
         if(resource){
+
+            // search for item that is especially denied with '-<item>'
+            for(let binding of bindings){
+                if(
+                    this.validateItemIsDenied(resource.group, binding.groups) ||
+                    this.validateItemIsDenied(resource.name, binding.resources) ||
+                    (request.verbs.filter(verb => this.validateItemIsDenied(verb, binding.verbs)).length) ||
+                    (request.resourceName && this.validateItemIsDenied(request.resourceName, binding.resourceNames))
+                ){
+                    return false;
+                }
+            }
+
+            // validate item
             for(let binding of bindings){
                 if(this.validateItem(resource.group, binding.groups) && this.validateItem(resource.name, binding.resources)){
                     for(let verb of request.verbs){
@@ -50,6 +64,7 @@ export class RbacService {
                     }
                 }
             }
+
         }
         return false;
     }
@@ -66,6 +81,12 @@ export class RbacService {
     private validateItem(toValidate: string, validateWith: string[]): boolean {
         toValidate = toValidate.trim().toLowerCase();
         validateWith = validateWith.map(v => v.trim().toLowerCase());
-        return !validateWith.includes(`-${toValidate}`) && (validateWith.includes('*') || validateWith.includes(toValidate));
+        return !this.validateItemIsDenied(toValidate, validateWith) && (validateWith.includes('*') || validateWith.includes(toValidate));
+    }
+
+    private validateItemIsDenied(toValidate: string, validateWith: string[]): boolean {
+        toValidate = toValidate.trim().toLowerCase();
+        validateWith = validateWith.map(v => v.trim().toLowerCase());
+        return validateWith.includes(`-${toValidate}`);
     }
 }

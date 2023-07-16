@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import {IRbacVerbs} from "../enum/rbac-verb.enum";
-import {RBAC_GROUP, RBAC_METHODS, RBAC_RESOURCE, RBAC_VERBS} from "../rbac.constants";
+import {RBAC_GROUP, RBAC_METHODS, RBAC_REQUIRES_OPTIONS, RBAC_RESOURCE, RBAC_VERBS} from "../rbac.constants";
+import {IRbacRequiresOptions} from "../interfaces/rbac-requires-options.interface";
 
 export function setMetadata<T>(metadataKey: string|symbol, metadataValue: T, target: Object, propertyKey?: string|symbol) {
     return Reflect.defineMetadata(metadataKey, metadataValue, target, propertyKey);
@@ -38,6 +39,17 @@ export function getRbacResource(target: any, propertyKey?: string|symbol): strin
     return getMetadata(RBAC_RESOURCE, target.prototype || target, propertyKey) || null;
 }
 
+export function setRbacRequiresOptions(target: any, propertyKey?: string|symbol, options?: Partial<IRbacRequiresOptions>): void {
+    setMetadata(RBAC_REQUIRES_OPTIONS, options || {}, target.prototype || target, propertyKey);
+}
+
+export function getRbacRequiresOptions(target: any, propertyKey?: string|symbol): IRbacRequiresOptions {
+    const options = getMetadata(RBAC_REQUIRES_OPTIONS, target.prototype || target, propertyKey) as Partial<IRbacRequiresOptions>;
+    return {
+        skipValidation: options?.skipValidation ?? false,
+        meta: options?.meta || {},
+    }
+}
 
 export function addRbacVerbs(verbs: IRbacVerbs, target: any, propertyKey?: string|symbol): IRbacVerbs {
     for(let verb of (verbs || [])){

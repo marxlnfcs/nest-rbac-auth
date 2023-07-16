@@ -45,8 +45,14 @@ describe('Testing Library', () => {
     it('calling "POST /" should return status code 200', async () => {
       await request(app.getHttpServer()).post('/').expect(201);
     });
+    it('calling "PATCH /" should return status code 200', async () => {
+      await request(app.getHttpServer()).patch('/').expect(200);
+    });
     it('calling "PUT /" should return status code 403', async () => {
       await request(app.getHttpServer()).put('/').expect(403);
+    });
+    it('calling "DELETE /" should return status code 403', async () => {
+      await request(app.getHttpServer()).delete('/').expect(403);
     });
   });
 
