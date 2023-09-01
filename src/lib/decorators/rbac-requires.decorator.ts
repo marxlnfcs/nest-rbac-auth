@@ -7,7 +7,6 @@ import {getRbacBuilder} from "../services/rbac-builder.service";
 import {addRbacVerbs} from "../utils/metadata.utils";
 import {IRbacRequiresOptions} from "../interfaces/rbac-requires-options.interface";
 import {RbacRequiresOptions} from "./rbac-requires-options.decorator";
-import {IRbacGroup} from "../interfaces/rbac-group.interface";
 import {IRbacValidateRequest} from "../interfaces/rbac-validate-request.interface";
 
 export function RbacRequires(verbOrList: IRbacVerbOrList, options?: Partial<IRbacRequiresOptions>): MethodDecorator & ClassDecorator {
