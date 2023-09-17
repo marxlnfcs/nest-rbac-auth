@@ -43,6 +43,7 @@ export class RbacBuilderService {
                 // create sections
                 for(let node of this.extractSections(controller, method)){
                     section = this.getOrCreateSection(joinPath(path, node.path), section?.sections || this.sections);
+                    section.description = node.description || section.description;
                     path = section.path;
                 }
 
