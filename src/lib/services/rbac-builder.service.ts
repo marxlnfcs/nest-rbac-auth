@@ -95,10 +95,11 @@ export class RbacBuilderService {
         const [ controller, method ] = [ context.getClass(), context.getHandler().name ];
         if(controller && method){
             const info = this.getMethodInfo(controller, method);
-            return {
+            const request: IRbacValidateRequest = {
                 permission: joinPath(...info.sections.map(r => r.path), ...info.paths),
                 options: info.options,
             };
+            return request.permission ? request : null;
         }
         return null;
     }
