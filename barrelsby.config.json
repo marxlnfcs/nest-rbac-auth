@@ -6,5 +6,5 @@
   "singleQuotes": true,
   "mode": "flat",
   "name": "index.ts",
-  "exclude": "./index.ts"
+  "exclude": ["./index.ts", "./main.ts"]
 }

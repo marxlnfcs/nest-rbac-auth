@@ -1,6 +1,6 @@
 <p align="center" style="font-size: 40px;">NestJS RBAC Authorization</p>
 
-<p align="center">Simple RBAC Implementation for NestJS that allowes you to define required VERBS on controllers and routes and validate it with the builtin AuthGuard</p>
+<p align="center">Simple RBAC Implementation for NestJS that allowes you to define required permissions as glob pattern on controllers and routes and validate it with the builtin AuthGuard</p>
 <p align="center">
     <a href="https://www.npmjs.com/package/@marxlnfcs/nest-rbac-auth" target="_blank"><img src="https://img.shields.io/npm/v/@marxlnfcs/nest-rbac-auth.svg" alt="NPM Version" /></a>
     <a href="https://www.npmjs.com/package/@marxlnfcs/nest-rbac-auth" target="_blank"><img src="https://img.shields.io/npm/l/@marxlnfcs/nest-rbac-auth.svg" alt="Package License" /></a>
@@ -13,6 +13,9 @@
 > With this library I'm learning how dependency injection works and how to build such libraries according to "best practice".
 >
 > So please use this library with caution.
+
+> **Information**
+> If you want to use the old RBAC system, please use v0.1.4 because v1.X.X uses a new system with a dot notation (e.g.: foo.bar.*)
 
 ## Installation
 ```
@@ -34,83 +37,55 @@ export class AppModule {}
 
 ### Controller
 ```typescript
-import { RbacGroup, RbacResource, RbacRequires, RbacRequires } from '@marxlnfcs/nest-rbac-auth';
+import { RbacSection, RbacRequires } from '@marxlnfcs/nest-rbac-auth';
 
 @Controller('/users')
-@RbacGroup('AccessManagement')
-@RbacResource('User')
+@RbacSection('access', 'Access Management')
+@RbacSection('user', 'User')
 export class UserController {
 
     @Get()
-    // @RbacRequires(['LIST'])
-    // @RbacRequiresList()
-    @RbacRequires('LIST')
+    // @RbacRequires(['list'], 'Can list users')
+    // @RbacRequiresList('Can list users')
+    @RbacRequires('list', 'Can list users')
     getUsers(){ ... }
 
     @Get('/:userId')
-    // @RbacRequires(['GET'])
-    // @RbacRequiresGet()
-    @RbacRequires('GET')
+    // @RbacRequires(['get'], 'Can retrieve a user')
+    // @RbacRequiresGet('Can retrieve a user')
+    @RbacRequires('GET', 'Can retrieve a user')
     getUser(...){ ... }
 
     @Post('/')
-    // @RbacRequires(['CREATE'])
-    // @RbacRequiresCreate()
-    @RbacRequires('CREATE')
+    // @RbacRequires(['create'], 'Can create a user')
+    // @RbacRequiresCreate('Can create a user')
+    @RbacRequires('create', 'Can create a user')
     createUser(...){ ... }
 
     @Put('/:userId')
-    // @RbacRequires(['UPDATE'])
-    // @RbacRequiresUpdate()
-    @RbacRequires('PUT')
+    // @RbacRequires(['update'], 'Can update a user')
+    // @RbacRequiresUpdate('Can update a user')
+    @RbacRequires('update', 'Can update a user')
     updateUser(...){ ... }
 
-    @Patch('/:userId')
-    // @RbacRequires(['PATCH'])
-    // @RbacRequiresPatch()
-    @RbacRequires('PATCH')
-    updateUserPartially(...){ ... }
-
     @Delete('/:userId')
-    // @RbacRequires(['DELETE'])
-    // @RbacRequiresDelete()
-    @RbacRequires('DELETE')
+    // @RbacRequires(['delete'], 'Can delete a user')
+    // @RbacRequiresDelete('Can delete a user')
+    @RbacRequires('delete', 'Can delete a user')
     deleteUser(...){ ... }
 
-    @Delete('/')
-    // @RbacRequires(['DELETECOLLECTION'])
-    // @RbacRequiresDeleteCollection()
-    @RbacRequires('DELETECOLLECTION')
-    deleteUserCollection(...){ ... }
+    @Post('/action')
+    // @RbacRequires(['custom'], 'Can do <custom> action')
+    @RbacRequires('custom', 'Can do <custom> action')
+    customAction(...){ ... }
     
 }
 
 @Controller('/groups')
-@RbacGroup('AccessManagement')
-@RbacResource('Groups')
+@RbacSection('access', 'Access Management')
+@RbacSection('group', 'Group')
 export class GroupController {
     ...
-}
-```
-
-### Retrieve Groups, Resources and Verbs of the current route
-```typescript
-import { RbacGroup, RbacResource, RbacRequires, RbacRequires, GetRbacGroup, GetRbacResource, GetRbacVerbs, IRbacGroup, IRbacResource, IRbacVerbs, IRbacRequiresOptions } from '@marxlnfcs/nest-rbac-auth';
-
-@Controller('/users')
-@RbacGroup('AccessManagement')
-@RbacResource('User')
-export class UserController {
-
-    @Get()
-    @RbacRequires('LIST')
-    getUsers(
-        @GetRbacGroup() group: IRbacGroup,
-        @GetRbacResource() resource: IRbacResource,
-        @GetRbacVerbs() verbs: IRbacVerbs,
-        @GetRbacRequiresOptions() options: IRbacRequiresOptions,
-    ){ ... }
-
 }
 ```
 
@@ -125,76 +100,23 @@ export class RoleGuard extends RbacGuard() {
     ){}
     
     validate(request: IRbacValidateRequest): boolean | Promise<boolean> | Observable<boolean> {
-        
-        // create test binding
-        const binding = this.rbacService.createBinding({
-            verbs: ['LIST', 'GET']
-        })
-        
-        // validate binding with request
-        return this.validateRequest(request, [binding]);
-
-        /**
-         * OR:
-         * if(!this.validateRequest(request, [binding])){
-         *  throw new ForbiddenException('No permissions');
-         * }
-         */
-
+        return this.validateRequest(request, ['*', '!*.create', '!*.update']);
     }
 }
 ```
 
 ### Skip validation for certain routes
 ```typescript
-import { RbacGroup, RbacResource, RbacRequiresList } from '@marxlnfcs/nest-rbac-auth';
+import { RbacSection, RbacRequiresList } from '@marxlnfcs/nest-rbac-auth';
 
 @Controller('/users')
-@RbacGroup('AccessManagement')
-@RbacResource('User')
+@RbacSection('access', 'Access Management')
+@RbacSection('user', 'User')
 export class UserController {
 
     @Get()
     @RbacRequiresList({ skipValidation: true })
-    // @RbacRequires('LIST', { skipValidation: true, meta: { ... } )
     getUsers(){ ... }
 
-}
-```
-
-### Create binding
-```typescript
-import { RbacService } from '@marxlnfcs/nest-rbac-auth';
-
-@Injectable()
-export class AppService {
-    constructor(
-        private rbacService: RbacService,
-    ){}
-
-    createBindings(){
-        
-        // create basic binding
-        this.rbacService.createBinding({
-            groups: ['AccessManagement'],
-            resources: ['Users', 'Groups'],
-            verbs: ['*']
-        });
-
-        // create wildcard binding
-        this.rbacService.createBinding({
-            groups: ['AccessManagement'], // ['*'] does also work
-            resources: ['*'],
-            verbs: ['*']
-        });
-
-        // Exclude resources, groups or verbs
-        this.rbacService.createBinding({
-            groups: ['*', '-AccessManagement'], // ['*'] does also work
-            resources: ['*', '-Users'],
-            verbs: ['*', '-CREATE']
-        });
-        
-    }
 }
 ```

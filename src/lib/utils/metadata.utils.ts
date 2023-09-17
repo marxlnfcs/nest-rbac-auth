@@ -1,66 +1,63 @@
 import 'reflect-metadata';
-import {IRbacVerbs} from "../enum/rbac-verb.enum";
-import {RBAC_GROUP, RBAC_METHODS, RBAC_REQUIRES_OPTIONS, RBAC_RESOURCE, RBAC_VERBS} from "../rbac.constants";
+import {RBAC_METHODS, RBAC_PERMISSION, RBAC_REQUIRES_OPTIONS, RBAC_SECTIONS} from "../rbac.constants";
 import {IRbacRequiresOptions} from "../interfaces/rbac-requires-options.interface";
+import {IRbacNode} from "../interfaces/rbac-permission.interface";
 
 export function setMetadata<T>(metadataKey: string|symbol, metadataValue: T, target: Object, propertyKey?: string|symbol) {
-    return Reflect.defineMetadata(metadataKey, metadataValue, target, propertyKey);
+	return Reflect.defineMetadata(metadataKey, metadataValue, target, propertyKey);
 }
 
-export function getMetadata<T = any>(metadataKey: string|symbol, target: Object, propertyKey?: string|symbol) {
-    return Reflect.getMetadata(metadataKey, target, propertyKey);
+export function addMetadata<T>(metadataKey: string|symbol, metadataValue: T[], target: Object, propertyKey?: string|symbol) {
+	if(Array.isArray(metadataValue)){
+		let data = getMetadata<T[]>(metadataKey, target, propertyKey);
+		data = Array.isArray(data) ? data : [];
+		metadataValue.map(v => data.push(v));
+		return setMetadata<T[]>(metadataKey, data, target, propertyKey);
+	}
+}
+
+export function getMetadata<T = any>(metadataKey: string|symbol, target: Object, propertyKey?: string|symbol): T {
+	return Reflect.getMetadata(metadataKey, target, propertyKey);
 }
 
 export function addRbacMethod(target: any, propertyKey: string|symbol): void {
-    const methodList = getRbacMethods(target.prototype || target);
-    if(!methodList.includes(propertyKey)){
-        methodList.push(propertyKey);
-        setMetadata(RBAC_METHODS, methodList, target.prototype || target);
-    }
+	const methodList = getRbacMethods(target.prototype || target);
+	if(!methodList.includes(propertyKey)){
+		methodList.push(propertyKey);
+		setMetadata(RBAC_METHODS, methodList, target.prototype || target);
+	}
 }
 
 export function getRbacMethods(target: any): (string|symbol)[] {
-    return getMetadata(RBAC_METHODS, target.prototype || target) || [];
+	return getMetadata(RBAC_METHODS, target.prototype || target) || [];
 }
 
-export function setRbacGroup(group: string, target: any, propertyKey?: string|symbol): string {
-    setMetadata(RBAC_GROUP, group, target.prototype || target, propertyKey);
-    return group;
-}
-export function getRbacGroup(target: any, propertyKey?: string|symbol): string {
-    return getMetadata(RBAC_GROUP, target.prototype || target, propertyKey) || null;
+export function addRbacSections(sections: IRbacNode[], target: Object, propertyKey?: string|symbol) {
+	addMetadata(RBAC_SECTIONS, sections, target, propertyKey);
 }
 
-export function setRbacResource(resource: string, target: any, propertyKey?: string|symbol): string {
-    setMetadata(RBAC_RESOURCE, resource, target.prototype || target, propertyKey);
-    return resource;
+export function getRbacSections(target: Object, propertyKey?: string|symbol): IRbacNode[] {
+	const sections: IRbacNode[] = getMetadata(RBAC_SECTIONS, target, propertyKey);
+	return Array.isArray(sections) ? sections : [];
 }
-export function getRbacResource(target: any, propertyKey?: string|symbol): string|null {
-    return getMetadata(RBAC_RESOURCE, target.prototype || target, propertyKey) || null;
+
+export function setRbacPermission(permissions: string[], target: any, propertyKey?: string|symbol): string[] {
+	setMetadata(RBAC_PERMISSION, permissions || [], target.prototype || target, propertyKey);
+	return permissions;
+}
+export function getRbacPermission(target: any, propertyKey?: string|symbol): string[] {
+	return getMetadata(RBAC_PERMISSION, target.prototype || target, propertyKey) || [];
 }
 
 export function setRbacRequiresOptions(target: any, propertyKey?: string|symbol, options?: Partial<IRbacRequiresOptions>): void {
-    setMetadata(RBAC_REQUIRES_OPTIONS, options || {}, target.prototype || target, propertyKey);
+	setMetadata(RBAC_REQUIRES_OPTIONS, options || {}, target.prototype || target, propertyKey);
 }
 
 export function getRbacRequiresOptions(target: any, propertyKey?: string|symbol): IRbacRequiresOptions {
-    const options = getMetadata(RBAC_REQUIRES_OPTIONS, target.prototype || target, propertyKey) as Partial<IRbacRequiresOptions>;
-    return {
-        skipValidation: options?.skipValidation ?? false,
-        meta: options?.meta || {},
-    }
-}
-
-export function addRbacVerbs(verbs: IRbacVerbs, target: any, propertyKey?: string|symbol): IRbacVerbs {
-    for(let verb of (verbs || [])){
-        const verbList = getRbacVerbs(target.prototype || target, propertyKey);
-        if(!verbList.filter(v => v.trim().toLowerCase() === verb.trim().toLowerCase()).length){
-            verbList.push(verb);
-            setMetadata(RBAC_VERBS, verbList, target.prototype || target, propertyKey);
-        }
-    }
-    return verbs;
-}
-export function getRbacVerbs(target: any, propertyKey?: string|symbol): IRbacVerbs {
-    return getMetadata(RBAC_VERBS, target.prototype || target, propertyKey) || [];
+	const options = getMetadata(RBAC_REQUIRES_OPTIONS, target.prototype || target, propertyKey) as Partial<IRbacRequiresOptions>;
+	return {
+		description: options?.description || null,
+		skipValidation: options?.skipValidation ?? false,
+		meta: options?.meta || {},
+	}
 }

@@ -3,7 +3,7 @@ import {createDecorator} from "../utils/decorators.utils";
 import {addRbacMethod} from "../utils/metadata.utils";
 
 /** @internal */
-export function RbacMethod(): MethodDecorator & ClassDecorator {
+export function RbacMethod(): MethodDecorator {
     return applyDecorators(
         createDecorator((target, propertyKey) => {
             if(propertyKey){

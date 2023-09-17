@@ -1,25 +1,17 @@
 import {Test, TestingModule} from "@nestjs/testing";
-import {GetRbacGroup, RbacGroup} from "../src/lib/decorators/rbac-group.decorator";
-import {GetRbacResource, RbacResource} from "../src/lib/decorators/rbac-resource.decorator";
 import {
   GetRbacRequest,
-  GetRbacRequiresOptions,
-  GetRbacVerbs,
+  IRbacValidateRequest,
+  RbacGuard,
+  RbacModule,
   RbacRequiresDelete,
   RbacRequiresGet,
   RbacRequiresList,
-  RbacRequiresPatch,
-  RbacRequiresUpdate
-} from "../src/lib/decorators/rbac-requires.decorator";
+  RbacRequiresUpdate,
+  RbacSection
+} from "../src";
 import {Controller, Delete, Get, Injectable, Patch, Post, Put, UseGuards} from "@nestjs/common";
-import {RbacModule} from "../src/lib/rbac.module";
-import {RbacGuard} from "../src/lib/guards/rbac.guard";
 import {Observable} from "rxjs";
-import {IRbacResource} from "../src/lib/interfaces/rbac-resource.interface";
-import {IRbacVerbs} from "../src/lib/enum/rbac-verb.enum";
-import {IRbacValidateRequest} from "../src/lib/interfaces/rbac-validate-request.interface";
-import {IRbacGroup} from "../src/lib/interfaces/rbac-group.interface";
-import {IRbacRequiresOptions, RbacService} from "../src";
 
 export function createTestModule(): Promise<TestingModule> {
   return Test.createTestingModule({
@@ -37,26 +29,13 @@ export function createTestModule(): Promise<TestingModule> {
 
 @Injectable()
 export class TestGuard extends RbacGuard() {
-  constructor(
-      private rbacService: RbacService,
-  ){ super(); }
-
   validate(request: IRbacValidateRequest): boolean | Promise<boolean> | Observable<boolean> {
-    const bindings = [
-      this.rbacService.createBinding({
-        verbs: ['*']
-      }),
-      this.rbacService.createBinding({
-        verbs: ['-UPDATE', '-DELETE']
-      })
-    ];
-    return this.validateRequest(request, bindings);
+    return this.validateRequest(request, ['*', '!*.update', '!*.delete']);
   }
 }
 
 @UseGuards(TestGuard)
-@RbacGroup('Testing')
-@RbacResource('Resource')
+@RbacSection('foo.bar')
 @Controller('/')
 export class TestController {
 
@@ -64,10 +43,6 @@ export class TestController {
   @Get()
   list(
       @GetRbacRequest() request: IRbacValidateRequest|null,
-      @GetRbacGroup() group: IRbacGroup|null,
-      @GetRbacResource() resource: IRbacResource|null,
-      @GetRbacVerbs() verbs: IRbacVerbs,
-      @GetRbacRequiresOptions() options: IRbacRequiresOptions,
   ){}
 
   @RbacRequiresGet()
@@ -78,7 +53,7 @@ export class TestController {
   @Put()
   denied(){}
 
-  @RbacRequiresPatch({ skipValidation: true })
+  @RbacRequiresUpdate({ skipValidation: true })
   @Patch()
   deniedButValidationSkipped() {}
 

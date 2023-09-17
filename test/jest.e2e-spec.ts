@@ -1,7 +1,7 @@
 import {INestApplication} from "@nestjs/common";
 import {TestingModule} from "@nestjs/testing";
 import {createTestModule, TestController} from "./test.module";
-import {RbacService} from "../src/lib/services/rbac.service";
+import {RbacService} from "../src";
 import * as request from 'supertest';
 
 describe('Testing Library', () => {
@@ -29,11 +29,15 @@ describe('Testing Library', () => {
     });
   });
 
-  // get rbac groups
-  describe('Get RBAC groups', () => {
-    it('should return a list of RBAC groups', async () => {
-      const groups = service.getGroups();
-      expect(groups).toBeTruthy();
+  // get rbac sections / permissions
+  describe('Get RBAC sections and permissions', () => {
+    it('should return a list of RBAC sections', async () => {
+      const sections = service.getSections();
+      expect(sections).toBeTruthy();
+    });
+    it('should return a list of RBAC permissions', async () => {
+      const permissions = service.getPermissions();
+      expect(permissions).toBeTruthy();
     });
   });
 

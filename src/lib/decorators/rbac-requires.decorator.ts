@@ -1,54 +1,57 @@
 import {applyDecorators, createParamDecorator, ExecutionContext} from "@nestjs/common";
-import {IRbacVerbOrList, IRbacVerbs} from "../enum/rbac-verb.enum";
 import {createDecorator} from "../utils/decorators.utils";
 import {RbacController} from "./rbac-controller.decorator";
 import {RbacMethod} from "./rbac-method.decorator";
 import {getRbacBuilder} from "../services/rbac-builder.service";
-import {addRbacVerbs} from "../utils/metadata.utils";
 import {IRbacRequiresOptions} from "../interfaces/rbac-requires-options.interface";
 import {RbacRequiresOptions} from "./rbac-requires-options.decorator";
 import {IRbacValidateRequest} from "../interfaces/rbac-validate-request.interface";
+import {extractObject, extractString} from "../utils/helpers.utils";
+import {setRbacPermission} from "../utils/metadata.utils";
 
-export function RbacRequires(verbOrList: IRbacVerbOrList, options?: Partial<IRbacRequiresOptions>): MethodDecorator & ClassDecorator {
+export function RbacRequires(path: string|string[], options?: Partial<IRbacRequiresOptions>): MethodDecorator;
+export function RbacRequires(path: string|string[], description?: string, options?: Partial<Omit<IRbacRequiresOptions, 'description'>>): MethodDecorator;
+export function RbacRequires(path: string|string[], descOrOpts?: string|Partial<IRbacRequiresOptions>, opts?: Partial<IRbacRequiresOptions>): MethodDecorator {
+    const options: Partial<IRbacRequiresOptions> = extractObject(descOrOpts, opts, {});
     return applyDecorators(
         RbacController(),
         RbacMethod(),
-        RbacRequiresOptions(options),
+        RbacRequiresOptions({
+            description: extractString(descOrOpts, options?.description),
+            skipValidation: options?.skipValidation,
+            meta: options?.meta,
+        }),
         createDecorator((target, propertyKey) => {
-            addRbacVerbs((Array.isArray(verbOrList) ? verbOrList : [verbOrList]).filter(f => !!f), target, propertyKey);
+          setRbacPermission((Array.isArray(path) ? path : [path]).filter(f => !!f), target, propertyKey);
         })
     );
 }
 
-export function RbacRequiresList(options?: Partial<IRbacRequiresOptions>): MethodDecorator & ClassDecorator {
-    return RbacRequires(['LIST'], options);
+export function RbacRequiresList(options?: Partial<IRbacRequiresOptions>): MethodDecorator;
+export function RbacRequiresList(description: string, options?: Partial<Omit<IRbacRequiresOptions, 'description'>>): MethodDecorator;
+export function RbacRequiresList(descriptionOrOptions?: string|Partial<IRbacRequiresOptions>, options?: Partial<IRbacRequiresOptions>): MethodDecorator {
+    return RbacRequires(['list'], descriptionOrOptions as any, options);
 }
-export function RbacRequiresGet(options?: Partial<IRbacRequiresOptions>): MethodDecorator & ClassDecorator {
-    return RbacRequires(['GET'], options);
+export function RbacRequiresGet(options?: Partial<IRbacRequiresOptions>): MethodDecorator;
+export function RbacRequiresGet(description: string, options?: Partial<Omit<IRbacRequiresOptions, 'description'>>): MethodDecorator;
+export function RbacRequiresGet(descriptionOrOptions?: string|Partial<IRbacRequiresOptions>, options?: Partial<IRbacRequiresOptions>): MethodDecorator {
+    return RbacRequires(['get'], descriptionOrOptions as any, options);
 }
-export function RbacRequiresCreate(options?: Partial<IRbacRequiresOptions>): MethodDecorator & ClassDecorator {
-    return RbacRequires(['CREATE'], options);
+export function RbacRequiresCreate(options?: Partial<IRbacRequiresOptions>): MethodDecorator;
+export function RbacRequiresCreate(description: string, options?: Partial<Omit<IRbacRequiresOptions, 'description'>>): MethodDecorator;
+export function RbacRequiresCreate(descriptionOrOptions?: string|Partial<IRbacRequiresOptions>, options?: Partial<IRbacRequiresOptions>): MethodDecorator {
+    return RbacRequires(['create'], descriptionOrOptions as any, options);
 }
-export function RbacRequiresUpdate(options?: Partial<IRbacRequiresOptions>): MethodDecorator & ClassDecorator {
-    return RbacRequires(['UPDATE'], options);
+export function RbacRequiresUpdate(options?: Partial<IRbacRequiresOptions>): MethodDecorator;
+export function RbacRequiresUpdate(description: string, options?: Partial<Omit<IRbacRequiresOptions, 'description'>>): MethodDecorator;
+export function RbacRequiresUpdate(descriptionOrOptions?: string|Partial<IRbacRequiresOptions>, options?: Partial<IRbacRequiresOptions>): MethodDecorator {
+    return RbacRequires(['update'], descriptionOrOptions as any, options);
 }
-export function RbacRequiresPatch(options?: Partial<IRbacRequiresOptions>): MethodDecorator & ClassDecorator {
-    return RbacRequires(['PATCH'], options);
+export function RbacRequiresDelete(options?: Partial<IRbacRequiresOptions>): MethodDecorator;
+export function RbacRequiresDelete(description: string, options?: Partial<Omit<IRbacRequiresOptions, 'description'>>): MethodDecorator;
+export function RbacRequiresDelete(descriptionOrOptions?: string|Partial<IRbacRequiresOptions>, options?: Partial<IRbacRequiresOptions>): MethodDecorator {
+    return RbacRequires(['delete'], descriptionOrOptions as any, options);
 }
-export function RbacRequiresDelete(options?: Partial<IRbacRequiresOptions>): MethodDecorator & ClassDecorator {
-    return RbacRequires(['DELETE'], options);
-}
-export function RbacRequiresDeleteCollection(options?: Partial<IRbacRequiresOptions>): MethodDecorator & ClassDecorator {
-    return RbacRequires(['DELETECOLLECTION'], options);
-}
-
-export const GetRbacVerbs = createParamDecorator<any, any, IRbacVerbs>((_: any, ctx: ExecutionContext) => {
-    return getRbacBuilder().getVerbsFromContext(ctx);
-});
-
-export const GetRbacRequiresOptions = createParamDecorator<any, any, IRbacRequiresOptions>((_: any, ctx: ExecutionContext) => {
-    return getRbacBuilder().getOptionsFromContext(ctx);
-});
 
 export const GetRbacRequest = createParamDecorator<any, any, IRbacValidateRequest|null>((_: any, ctx: ExecutionContext) => {
     return getRbacBuilder().getRequestFromContext(ctx);

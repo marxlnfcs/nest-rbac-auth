@@ -1,5 +1,6 @@
 const defaultKey = 'default';
 
+/** @internal */
 export function memoize(fn: Function) {
     const cache = {};
     return (...args) => {
