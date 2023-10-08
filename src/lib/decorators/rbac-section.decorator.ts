@@ -14,7 +14,7 @@ export function RbacSections(...data: ([RbacSectionPath, RbacSectionDescription]
 		RbacController(),
 		RbacMethod(),
 		createDecorator((target, propertyKey) => {
-			addRbacSections(createRbacSections(...data.map(([path, description]) => ({
+			addRbacSections(createRbacSections(...data.reverse().map(([path, description]) => ({
 				path: joinPath(path),
 				description: description,
 			}))), target, propertyKey);
