@@ -6,22 +6,24 @@ import {RbacMethod} from "./rbac-method.decorator";
 import {addRbacSections} from "../utils/metadata.utils";
 import {joinPath} from "../utils/helpers.utils";
 
-/** @internal */
-export function RbacSections(...data: (string|IRbacNode|(string|IRbacNode)[])[]): MethodDecorator & ClassDecorator {
+export type RbacSectionPath = string|string[];
+export type RbacSectionDescription = string|null|undefined;
+
+export function RbacSections(...data: ([RbacSectionPath, RbacSectionDescription])[]): MethodDecorator & ClassDecorator {
 	return applyDecorators(
 		RbacController(),
 		RbacMethod(),
 		createDecorator((target, propertyKey) => {
-			addRbacSections(createRbacSections(...data), target, propertyKey);
+			addRbacSections(createRbacSections(...data.map(([path, description]) => ({
+				path: joinPath(path),
+				description: description,
+			}))), target, propertyKey);
 		})
 	)
 }
 
-export function RbacSection(path: string|string[], description?: string|null): MethodDecorator & ClassDecorator {
-	return RbacSections({
-		path: joinPath(path),
-		description: description,
-	});
+export function RbacSection(path: RbacSectionPath, description?: RbacSectionDescription): MethodDecorator & ClassDecorator {
+	return RbacSections([ path, description ]);
 }
 
 /** @internal */

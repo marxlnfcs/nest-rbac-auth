@@ -1,7 +1,7 @@
 {
   "name": "@marxlnfcs/nest-rbac-auth",
   "private": false,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "NestJS Module for a simple RBAC implementation",
   "license": "MIT",
   "scripts": {
