@@ -96,6 +96,9 @@ export class RbacBuilderService {
         const [ controller, method ] = [ context.getClass(), context.getHandler().name ];
         if(controller && method){
             const info = this.getMethodInfo(controller, method);
+            if(!info.paths.length){
+              return null;
+            }
             const request: IRbacValidateRequest = {
                 permission: joinPath(...info.sections.map(r => r.path), ...info.paths),
                 options: info.options,
