@@ -53,6 +53,6 @@ export function RbacRequiresDelete(descriptionOrOptions?: string|Partial<IRbacRe
     return RbacRequires(['delete'], descriptionOrOptions as any, options);
 }
 
-export const GetRbacRequest = createParamDecorator<any, any, IRbacValidateRequest|null>((_: any, ctx: ExecutionContext) => {
+export const GetRbacRequest = createParamDecorator<any, IRbacValidateRequest|null>((_: any, ctx: ExecutionContext) => {
     return getRbacBuilder().getRequestFromContext(ctx);
 });
